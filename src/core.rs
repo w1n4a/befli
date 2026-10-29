@@ -14,7 +14,7 @@ pub fn add(arg: &str) -> Flag {
     flag
 }
 
-pub trait FlagFn {
+pub trait Core {
     fn get(&self) -> bool;
 }
 
@@ -36,7 +36,7 @@ impl Create for [&str] {
     }
 }
 
-impl FlagFn for Flag {
+impl Core for Flag {
     fn get(&self) -> bool {
         let args: Vec<String> = args().collect();
         if args.contains(&self.name) {
