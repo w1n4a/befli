@@ -2,214 +2,203 @@
 
 use std::env::args;
 
+#[derive(Debug)]
 pub struct Flag {
     pub name: String,
+    pub value: usize,
+    pub alias: Vec<String>,
 }
 
 #[derive(Debug)]
-pub enum Res {
-    None,
+pub struct Flags {
+    pub flags: Vec<Flag>,
+    pub args: Vec<String>,
 }
 
-pub fn add(arg: &str) -> Flag {
-    let flag = Flag {
-        name: arg.to_string(),
+#[derive(Debug)]
+pub struct Errors {
+    pub value: String,
+}
+
+pub fn new() -> Flags {
+    let flag = Flags {
+        flags: Vec::new(),
+        args: args().collect(),
     };
 
     flag
 }
 
 pub trait Core {
-    fn get(&self) -> bool;
-    fn value(&self, count: usize) -> Result<Vec<String>, Res>;
+    fn add(&mut self, fl: &str);
+    fn get(&mut self, fl: &str) -> Option<&mut Flag>;
+    fn get_name(&self, fl: &str) -> Option<String>;
+    fn get_status(&self, fl: &str) -> bool;
+    fn parse(&self, fl: &str) -> Result<Vec<String>, Errors>;
 }
 
-pub trait Multi {
-    fn collect(&self) -> Vec<Flag>;
-    fn gets(&self) -> bool;
+pub trait Value {
+    fn set_value(self, val: usize);
+    fn clear(self);
+    fn add_alias(&mut self, val: &str);
+    fn rem_alias(&mut self, val: &str);
 }
 
-pub trait Syntax {
-    fn add(&self) -> Flag;
-}
+impl Core for Flags {
+    fn add(&mut self, fl: &str) {
+        let mut status = true;
 
-impl Syntax for &str {
-    fn add(&self) -> Flag {
-        let flag = Flag {
-            name: self.to_string(),
-        };
-
-        flag
-    }
-}
-
-impl Syntax for String {
-    fn add(&self) -> Flag {
-        let flag = Flag {
-            name: self.to_string(),
-        };
-
-        flag
-    }
-}
-
-impl Multi for [&str] {
-    fn collect(&self) -> Vec<Flag> {
-        let mut res: Vec<Flag> = Vec::new();
-
-        for i in self {
-            res.push(Flag {
-                name: i.to_string(),
-            });
-        }
-
-        res
-    }
-
-    fn gets(&self) -> bool {
-        let mut res: usize = self.len();
-        let args: Vec<String> = args().collect();
-
-        for i in self {
-            if args.contains(&i.to_string()) {
-                res -= 1;
+        for i in &self.flags {
+            if i.name == fl {
+                status = false;
             }
         }
 
-        match res {
-            0 => true,
-            _ => false,
+        match status {
+            x if x => {
+                let flag = Flag {
+                    name: fl.to_string(),
+                    value: 0,
+                    alias: Vec::new(),
+                };
+                self.flags.push(flag);
+            }
+            _ => {}
         }
     }
-}
-
-impl Multi for [String] {
-    fn collect(&self) -> Vec<Flag> {
-        let mut res: Vec<Flag> = Vec::new();
-
-        for i in self {
-            res.push(Flag {
-                name: i.to_string(),
-            });
+    fn get(&mut self, fl: &str) -> Option<&mut Flag> {
+        for i in &mut self.flags {
+            if i.name == fl {
+                return Some(i);
+            }
         }
-
-        res
+        None
     }
-
-    fn gets(&self) -> bool {
-        let mut res: usize = self.len();
-        let args: Vec<String> = args().collect();
-
-        for i in self {
-            if args.contains(&i.to_string()) {
-                res -= 1;
+    fn get_name(&self, fl: &str) -> Option<String> {
+        for i in &self.flags {
+            if i.name == fl {
+                return Some(i.name.clone());
             }
         }
 
-        match res {
-            0 => true,
-            _ => false,
-        }
+        None
     }
-}
+    fn get_status(&self, fl: &str) -> bool {
+        let mut status = false;
 
-impl Multi for Vec<&str> {
-    fn collect(&self) -> Vec<Flag> {
-        let mut res: Vec<Flag> = Vec::new();
-
-        for i in self {
-            res.push(Flag {
-                name: i.to_string(),
-            });
-        }
-
-        res
-    }
-
-    fn gets(&self) -> bool {
-        let mut res: usize = self.len();
-        let args: Vec<String> = args().collect();
-
-        for i in self {
-            if args.contains(&i.to_string()) {
-                res -= 1;
+        for v in &self.flags {
+            if v.name == fl || v.alias.contains(&fl.to_string()) {
+                for i in &self.args {
+                    if *i == v.name || v.alias.contains(i) {
+                        status = true
+                    }
+                }
             }
         }
 
-        match res {
-            0 => true,
-            _ => false,
-        }
+        status
     }
-}
+    fn parse(&self, fl: &str) -> Result<Vec<String>, Errors> {
+        let mut pos: usize = 0;
+        let mut val: usize = 0;
+        let mut flags: Vec<String> = Vec::new();
 
-impl Multi for Vec<String> {
-    fn collect(&self) -> Vec<Flag> {
-        let mut res: Vec<Flag> = Vec::new();
+        let mut flag_name = "";
+        let mut flag_val: usize = 0;
 
-        for i in self {
-            res.push(Flag {
-                name: i.to_string(),
-            });
-        }
+        for i in &self.flags {
+            flags.push(i.name.clone());
 
-        res
-    }
-
-    fn gets(&self) -> bool {
-        let mut res: usize = self.len();
-        let args: Vec<String> = args().collect();
-
-        for i in self {
-            if args.contains(&i.to_string()) {
-                res -= 1;
+            for v in &i.alias {
+                flags.push(v.clone());
             }
-        }
 
-        match res {
-            0 => true,
-            _ => false,
-        }
-    }
-}
+            if i.name == fl || i.alias.contains(&fl.to_string()) {
+                flag_name = &i.name;
+                flag_val = i.value.clone();
 
-impl Core for Flag {
-    fn get(&self) -> bool {
-        let args: Vec<String> = args().collect();
-        if args.contains(&self.name) {
-            true
-        } else {
-            false
-        }
-    }
-
-    fn value(&self, count: usize) -> Result<Vec<String>, Res> {
-        let args: Vec<String> = args().collect();
-        let mut res: Vec<String> = Vec::new();
-
-        let mut idx: usize = 0;
-
-        for i in 0..args.len() {
-            if args[i] == self.name {
-                idx = i
-            }
-        }
-
-        if idx + count >= args.len() {
-            return Err(Res::None);
-        }
-
-        match idx {
-            0 => Err(Res::None),
-            _ => {
-                for v in 1..=count {
-                    if (idx + v) < args.len() {
-                        res.push(args[idx + v].clone());
+                for v in 0..self.args.len() {
+                    if self.args[v] == i.name || i.alias.contains(&self.args[v].to_string()) {
+                        pos = v;
+                        val = i.value;
                     }
                 }
 
+                if i.value == 0 {
+                    return Err(Errors {
+                        value: format!("Flag '{}' has a null value", flag_name).to_string(),
+                    });
+                }
+
+                if pos + i.value >= self.args.len() {
+                    return Err(Errors {
+                        value: format!("Too few args: expected {}", flag_val).to_string(),
+                    });
+                }
+            }
+        }
+
+        match pos {
+            0 => {
+                return Err(Errors {
+                    value: format!("Flag '{}' not in args", flag_name).to_string(),
+                })
+            }
+            _ => {
+                let mut res: Vec<String> = Vec::new();
+                for v in 1..=val {
+                    let f = &self.args[pos + v];
+                    if flags.contains(f) == true {
+                        return Err(Errors {
+                            value: format!("Too few args: expected {}", flag_val).to_string(),
+                        });
+                    } else {
+                        res.push(f.clone());
+                    }
+                }
                 Ok(res)
             }
+        }
+    }
+}
+
+impl Value for Option<&mut Flag> {
+    fn set_value(self, val: usize) {
+        match self {
+            Some(v) => v.value = val,
+            None => {}
+        }
+    }
+
+    fn clear(self) {
+        match self {
+            Some(v) => {
+                v.value = 0;
+                for _ in 0..v.alias.len() {
+                    v.alias.remove(0);
+                }
+            }
+            None => {}
+        }
+    }
+
+    fn add_alias(&mut self, val: &str) {
+        match self {
+            Some(v) => v.alias.push(val.to_string()),
+            None => {}
+        }
+    }
+
+    fn rem_alias(&mut self, val: &str) {
+        match self {
+            Some(v) => {
+                for i in 0..v.alias.len() {
+                    if v.alias[i] == val {
+                        v.alias.remove(i);
+                    }
+                }
+            }
+            None => {}
         }
     }
 }

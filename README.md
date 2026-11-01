@@ -1,79 +1,134 @@
 # Befli
 
 Befli is a minimalistic flag system for rust by w1n4a.
+It has two parts: Core and Value.
 
-## Why Befli? (features)
+## Core:
 
-### `add` - creates & returns flag:
+### `new` - creates group of flags:
 ```rust
     use befli::Core;
 
     fn main() {
-        let x = befli::add("-o"); //name (x is struct)
-    }
-```
-* or
-```rust
-    use befli::{Core, Syntax};
-
-    fn main() {
-        let x = "-o".add(); //name (x is struct)
+        let flags = befli::new(); //new group
     }
 ```
 
-### `get` - returns bool:
+### `add` - adds flag to group:
 ```rust
     use befli::Core;
 
     fn main() {
-        let x = befli::add("-o"); //name (x is struct)
+        let flags = befli::new(); //new group
 
-        match x.get() { //bool
-            true => //code
-            false => //code
-        }
+        flags.add("-s"); //add flag '-s'
     }
 ```
 
-### `collect` - creates an array of flags (struct):
+### `get` - gets current flag for name:
 ```rust
-    use befli::{Core, Multi};
+    use befli::Core;
 
     fn main() {
-        let x = ["-o", "-p", "-s"].collect(); //name in array (x is Vec<struct>)
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+        flags.get("-s"); //get flag 's' (returns option)
     }
 ```
 
-### `gets` - returns bool if args contains all flags in the array:
+### `get_name` - gets name of flag:
 ```rust
-    use befli::{Core, Multi};
+    use befli::Core;
 
     fn main() {
-        match ["-o", "-s"].gets() { //name in array (is bool)
-            true => //code
-            false => //code
-        }
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+        flags.get_name("-s"); //get name flag 's' (returns option)
     }
 ```
 
-### `value` - picks N values after current flag:
+### `get_status` - gets flag status in args:
 ```rust
-use befli::{Core, Multi};
+    use befli::Core;
 
-fn main() {
-    let x = befli::add("-p"); //name (x is struct)
+    fn main() {
+        let flags = befli::new(); //new group
 
-    match x.get() {
-        true => {
-            let i = x.value(1); //i is result (N = 1) (Result<Vec<String>>)
-            match i {
-                Ok(val) => println!("Hi {}", val[0]), //print
-                Err(_) => println!("Error"), //error
+        flags.add("-s"); //add flag 's'
+        flags.get_status("-s"); //get status flag 's' (checks flag in args) (returns bool)
+    }
+```
+
+### `parse` - gets count values after flag:
+```rust
+    use befli::Core;
+
+    fn main() {
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+
+        if flags.get_status("-s") { //check status in args
+            let r = flags.parse("-s"); //get values (returns result)
+
+            match r {
+                Ok(val) => { /* your code */}
+                Err(err) => { /* handle error */}
             }
         }
-        _ => {}
     }
-}
+```
+
+## Value:
+
+### `set_value` - sets count valuess after flag:
+```rust
+    use befli::Core;
+
+    fn main() {
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+        flags.get("-s").set_value(1); //get flag 's' and set value
+    }
+```
+
+### `clear` - clears flag:
+```rust
+    use befli::Core;
+
+    fn main() {
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+        flags.get("-s").clear(); //get flag 's' and clear it
+    }
+```
+
+### `add_alias` - adds alias for flag:
+```rust
+    use befli::Core;
+
+    fn main() {
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+        flags.get("-s").add_alias("--status"); //get flag 's' and add alias
+    }
+```
+
+### `rem_alias` - removes alias for flag:
+```rust
+    use befli::Core;
+
+    fn main() {
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+        flags.get("-s").rem_alias("--status"); //get flag 's' and remove alias
+    }
 ```
 
 ## License
