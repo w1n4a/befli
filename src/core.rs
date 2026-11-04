@@ -16,7 +16,15 @@ pub struct Flags {
 }
 
 #[derive(Debug)]
+pub enum ErrorsTypes {
+    Null,
+    Few,
+    None,
+}
+
+#[derive(Debug)]
 pub struct Errors {
+    pub types: ErrorsTypes,
     pub value: String,
 }
 
@@ -126,12 +134,14 @@ impl Core for Flags {
 
                 if i.value == 0 {
                     return Err(Errors {
+                        types: ErrorsTypes::Null,
                         value: format!("Flag '{}' has a null value", flag_name).to_string(),
                     });
                 }
 
                 if pos + i.value >= self.args.len() {
                     return Err(Errors {
+                        types: ErrorsTypes::Few,
                         value: format!("Too few args: expected {}", flag_val).to_string(),
                     });
                 }
@@ -141,6 +151,7 @@ impl Core for Flags {
         match pos {
             0 => {
                 return Err(Errors {
+                    types: ErrorsTypes::None,
                     value: format!("Flag '{}' not in args", flag_name).to_string(),
                 })
             }
@@ -150,6 +161,7 @@ impl Core for Flags {
                     let f = &self.args[pos + v];
                     if flags.contains(f) == true {
                         return Err(Errors {
+                            types: ErrorsTypes::Few,
                             value: format!("Too few args: expected {}", flag_val).to_string(),
                         });
                     } else {

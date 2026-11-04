@@ -1,7 +1,7 @@
 # Befli
 
 Befli is a minimalistic flag system for rust by w1n4a.
-It has two parts: Core and Value.
+It has two parts: Core and Value. (And error system)
 
 ## Core:
 
@@ -83,7 +83,7 @@ It has two parts: Core and Value.
 
 ## Value:
 
-### `set_value` - sets count valuess after flag:
+### `set_value` - sets count values after flag:
 ```rust
     use befli::Core;
 
@@ -129,6 +129,31 @@ It has two parts: Core and Value.
         flags.add("-s"); //add flag 's'
         flags.get("-s").rem_alias("--status"); //get flag 's' and remove alias
     }
+```
+
+## Error System (ErrorTypes) - handling errors:
+
+```rust
+    use befli::Core;
+    use befli::ErrorsTypes;
+    use befli::Value;
+
+    fn main() {
+        let mut fl = befli::new();
+        fl.add("-p");
+        fl.get("-p").set_value(1);
+
+        let i = fl.parse("-p");
+        match i {
+            Ok(v) => println!("Ok: {:?}", v),
+            Err(v) => match v.types {
+                ErrorsTypes::Null => println!("Error: Null"), //example
+                ErrorsTypes::Few => println!("Error: Few"), //example
+                ErrorsTypes::None => println!("Error: None"), //example
+            },
+        }
+    }
+
 ```
 
 ## License
