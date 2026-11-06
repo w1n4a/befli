@@ -2,27 +2,27 @@
 
 use std::env::args;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Flag {
     pub name: String,
     pub value: usize,
     pub alias: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Flags {
     pub flags: Vec<Flag>,
     pub args: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ErrorsTypes {
     Null,
     Few,
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Errors {
     pub types: ErrorsTypes,
     pub value: String,
