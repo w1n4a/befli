@@ -46,10 +46,10 @@ pub trait Core {
 }
 
 pub trait Value {
-    fn set_value(self, val: usize);
-    fn clear(self);
-    fn add_alias(&mut self, val: &str);
-    fn rem_alias(&mut self, val: &str);
+    fn set_value(&mut self, val: usize) -> Option<&mut Flag>;
+    fn clear(&mut self) -> Option<&mut Flag>;
+    fn add_alias(&mut self, val: &str) -> Option<&mut Flag>;
+    fn rem_alias(&mut self, val: &str) -> Option<&mut Flag>;
 }
 
 impl Core for Flags {
@@ -175,33 +175,40 @@ impl Core for Flags {
 }
 
 impl Value for Option<&mut Flag> {
-    fn set_value(self, val: usize) {
+    fn set_value(&mut self, val: usize) -> Option<&mut Flag> {
         match self {
-            Some(v) => v.value = val,
-            None => {}
+            Some(v) => {
+                v.value = val;
+                Some(v)
+            }
+            None => None,
         }
     }
 
-    fn clear(self) {
+    fn clear(&mut self) -> Option<&mut Flag> {
         match self {
             Some(v) => {
                 v.value = 0;
                 for _ in 0..v.alias.len() {
                     v.alias.remove(0);
                 }
+                Some(v)
             }
-            None => {}
+            None => None,
         }
     }
 
-    fn add_alias(&mut self, val: &str) {
+    fn add_alias(&mut self, val: &str) -> Option<&mut Flag> {
         match self {
-            Some(v) => v.alias.push(val.to_string()),
-            None => {}
+            Some(v) => {
+                v.alias.push(val.to_string());
+                Some(v)
+            }
+            None => None,
         }
     }
 
-    fn rem_alias(&mut self, val: &str) {
+    fn rem_alias(&mut self, val: &str) -> Option<&mut Flag> {
         match self {
             Some(v) => {
                 for i in 0..v.alias.len() {
@@ -209,8 +216,9 @@ impl Value for Option<&mut Flag> {
                         v.alias.remove(i);
                     }
                 }
+                Some(v)
             }
-            None => {}
+            None => None,
         }
     }
 }
