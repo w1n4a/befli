@@ -61,6 +61,18 @@ It has two parts: Core and Value. (And error system)
     }
 ```
 
+### `get_pos` - gets flag position in args:
+```rust
+    use befli::Core;
+
+    fn main() {
+        let flags = befli::new(); //new group
+
+        flags.add("-s"); //add flag 's'
+        flags.get_pos("-s"); //get status flag 's' (checks flag position in args) (returns option - usize)
+    }
+```
+
 ### `parse` - gets count values after flag:
 ```rust
     use befli::Core;
