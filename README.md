@@ -69,7 +69,7 @@ It has two parts: Core and Value. (And error system)
         let flags = befli::new(); //new group
 
         flags.add("-s"); //add flag 's'
-        flags.get_pos("-s"); //get status flag 's' (checks flag position in args) (returns option - usize)
+        flags.get_pos("-s"); //get status flag 's' (checks flag position in args) (returns usize)
     }
 ```
 

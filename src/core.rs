@@ -42,7 +42,7 @@ pub trait Core {
     fn get(&mut self, fl: &str) -> Option<&mut Flag>;
     fn get_name(&self, fl: &str) -> Option<String>;
     fn get_status(&self, fl: &str) -> bool;
-    fn get_pos(&self, fl: &str) -> Option<usize>;
+    fn get_pos(&self, fl: &str) -> usize;
     fn parse(&self, fl: &str) -> Result<Vec<String>, Errors>;
 }
 
@@ -173,7 +173,7 @@ impl Core for Flags {
             }
         }
     }
-    fn get_pos(&self, fl: &str) -> Option<usize> {
+    fn get_pos(&self, fl: &str) -> usize {
         let mut pos: usize = 0;
         for i in 0..self.args.len() {
             if &self.args[i] == fl {
@@ -181,10 +181,7 @@ impl Core for Flags {
             }
         }
 
-        match pos {
-            0 => None,
-            _ => Some(pos),
-        }
+        pos
     }
 }
 
