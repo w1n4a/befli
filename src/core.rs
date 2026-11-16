@@ -2,7 +2,7 @@
 
 use std::{env::args, fs, path::PathBuf};
 
-type PathGroup = Vec<PathBuf>;
+pub type PathGroup = Vec<PathBuf>;
 
 #[derive(Debug, Clone)]
 pub struct Flag {
