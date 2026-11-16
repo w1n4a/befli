@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use std::{env::args, fs};
+use std::{env::args, fs, path::PathBuf};
 
-type PathGroup = Vec<String>;
+type PathGroup = Vec<PathBuf>;
 
 #[derive(Debug, Clone)]
 pub struct Flag {
@@ -218,23 +218,19 @@ impl Core for Flags {
         let mut flags: Vec<String> = Vec::new();
 
         for i in &self.flags {
-            flags.push(i.name.clone());
+            if i.value > 0 {
+                flags.push(i.name.clone());
 
-            for v in &i.alias {
-                flags.push(v.clone());
+                for v in &i.alias {
+                    flags.push(v.clone());
+                }
             }
         }
 
         for i in 0..args.len() {
-            if args[i].contains("/") && i != 0 && flags.contains(&args[i]) == false {
-                let real = match fs::metadata(&args[i]) {
-                    Ok(_) => true,
-                    Err(_) => true,
-                };
-
-                if real {
-                    paths.push(args[i].clone());
-                }
+            if i != 0 && flags.contains(&args[i - 1]) == false && fs::exists(&args[i]).unwrap() {
+                let p = fs::canonicalize(&args[i]).unwrap();
+                paths.push(p.clone());
             }
         }
         paths
