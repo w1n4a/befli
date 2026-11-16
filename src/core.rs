@@ -1,11 +1,14 @@
 #![allow(dead_code)]
 
-use std::env::args;
+use std::{env::args, fs};
+
+type PathGroup = Vec<String>;
 
 #[derive(Debug, Clone)]
 pub struct Flag {
     pub name: String,
     pub value: usize,
+    pub bio: String,
     pub alias: Vec<String>,
 }
 
@@ -40,10 +43,13 @@ pub fn new() -> Flags {
 pub trait Core {
     fn add(&mut self, fl: &str);
     fn get(&mut self, fl: &str) -> Option<&mut Flag>;
-    fn get_name(&self, fl: &str) -> Option<String>;
+    fn get_name(&self, fl: &str) -> Option<&String>;
     fn get_status(&self, fl: &str) -> bool;
     fn get_pos(&self, fl: &str) -> usize;
+    fn get_bio(&self, fl: &str) -> Option<&String>;
     fn parse(&self, fl: &str) -> Result<Vec<String>, Errors>;
+    fn gen_help(&mut self);
+    fn search_path(&self) -> PathGroup;
 }
 
 pub trait Value {
@@ -51,6 +57,7 @@ pub trait Value {
     fn clear(&mut self) -> Option<&mut Flag>;
     fn add_alias(&mut self, val: &str) -> Option<&mut Flag>;
     fn rem_alias(&mut self, val: &str) -> Option<&mut Flag>;
+    fn set_bio(&mut self, val: &str) -> Option<&mut Flag>;
 }
 
 impl Core for Flags {
@@ -68,6 +75,7 @@ impl Core for Flags {
                 let flag = Flag {
                     name: fl.to_string(),
                     value: 0,
+                    bio: String::new(),
                     alias: Vec::new(),
                 };
                 self.flags.push(flag);
@@ -83,10 +91,10 @@ impl Core for Flags {
         }
         None
     }
-    fn get_name(&self, fl: &str) -> Option<String> {
+    fn get_name(&self, fl: &str) -> Option<&String> {
         for i in &self.flags {
             if i.name == fl {
-                return Some(i.name.clone());
+                return Some(&i.name);
             }
         }
 
@@ -174,14 +182,62 @@ impl Core for Flags {
         }
     }
     fn get_pos(&self, fl: &str) -> usize {
-        let mut pos: usize = 0;
         for i in 0..self.args.len() {
             if &self.args[i] == fl {
-                pos = i;
+                return i;
             }
         }
 
-        pos
+        return 0;
+    }
+    fn get_bio(&self, fl: &str) -> Option<&String> {
+        for i in &self.flags {
+            if i.name == fl {
+                return Some(&i.bio);
+            }
+        }
+        return None;
+    }
+    fn gen_help(&mut self) {
+        self.add("--help");
+        self.get("--help").set_bio("Open help menu");
+        if self.get_status("--help") {
+            println!("Help:\n");
+            for i in &self.flags {
+                if i.name != "--help" {
+                    println!("{} — {}", i.name, i.bio)
+                }
+            }
+            println!("\nType --help to open this menu")
+        }
+    }
+    fn search_path(&self) -> PathGroup {
+        let mut paths: PathGroup = PathGroup::new();
+        let args = &self.args;
+
+        let mut flags: Vec<String> = Vec::new();
+
+        for i in &self.flags {
+            flags.push(i.name.clone());
+
+            for v in &i.alias {
+                flags.push(v.clone());
+            }
+        }
+
+        for i in 0..args.len() {
+            if args[i].contains("/") && i != 0 && flags.contains(&args[i]) == false {
+                let real = match fs::metadata(&args[i]) {
+                    Ok(_) => true,
+                    Err(_) => true,
+                };
+
+                if real {
+                    paths.push(args[i].clone());
+                }
+            }
+        }
+        paths
     }
 }
 
@@ -208,7 +264,6 @@ impl Value for Option<&mut Flag> {
             None => None,
         }
     }
-
     fn add_alias(&mut self, val: &str) -> Option<&mut Flag> {
         match self {
             Some(v) => {
@@ -218,7 +273,6 @@ impl Value for Option<&mut Flag> {
             None => None,
         }
     }
-
     fn rem_alias(&mut self, val: &str) -> Option<&mut Flag> {
         match self {
             Some(v) => {
@@ -227,6 +281,15 @@ impl Value for Option<&mut Flag> {
                         v.alias.remove(i);
                     }
                 }
+                Some(v)
+            }
+            None => None,
+        }
+    }
+    fn set_bio(&mut self, val: &str) -> Option<&mut Flag> {
+        match self {
+            Some(v) => {
+                v.bio = val.to_string();
                 Some(v)
             }
             None => None,
