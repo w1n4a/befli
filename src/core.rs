@@ -50,6 +50,7 @@ pub trait Core {
     fn parse(&self, fl: &str) -> Result<Vec<String>, Errors>;
     fn gen_help(&mut self);
     fn search_path(&self) -> PathGroup;
+    fn alias(&self) -> Vec<String>;
 }
 
 pub trait Value {
@@ -116,69 +117,70 @@ impl Core for Flags {
         status
     }
     fn parse(&self, fl: &str) -> Result<Vec<String>, Errors> {
-        let mut pos: usize = 0;
-        let mut val: usize = 0;
-        let mut flags: Vec<String> = Vec::new();
+        if self.args.contains(&fl.to_string()) {
+            let mut pos: usize = 0;
+            let mut val: usize = 0;
+            let flags: Vec<String> = self.alias();
 
-        let mut flag_name = "";
-        let mut flag_val: usize = 0;
+            let mut flag_name = "";
+            let mut flag_val: usize = 0;
 
-        for i in &self.flags {
-            flags.push(i.name.clone());
+            for i in &self.flags {
+                if i.name == fl || i.alias.contains(&fl.to_string()) {
+                    flag_name = &i.name;
+                    flag_val = i.value.clone();
 
-            for v in &i.alias {
-                flags.push(v.clone());
-            }
-
-            if i.name == fl || i.alias.contains(&fl.to_string()) {
-                flag_name = &i.name;
-                flag_val = i.value.clone();
-
-                for v in 0..self.args.len() {
-                    if self.args[v] == i.name || i.alias.contains(&self.args[v].to_string()) {
-                        pos = v;
-                        val = i.value;
+                    for v in 0..self.args.len() {
+                        if self.args[v] == i.name || i.alias.contains(&self.args[v].to_string()) {
+                            pos = v;
+                            val = i.value;
+                        }
                     }
-                }
 
-                if i.value == 0 {
-                    return Err(Errors {
-                        types: ErrorsTypes::Null,
-                        value: format!("Flag '{}' has a null value", flag_name).to_string(),
-                    });
-                }
+                    if i.value == 0 {
+                        return Err(Errors {
+                            types: ErrorsTypes::Null,
+                            value: format!("Flag '{}' has a null value", flag_name).to_string(),
+                        });
+                    }
 
-                if pos + i.value >= self.args.len() {
-                    return Err(Errors {
-                        types: ErrorsTypes::Few,
-                        value: format!("Too few args: expected {}", flag_val).to_string(),
-                    });
-                }
-            }
-        }
-
-        match pos {
-            0 => {
-                return Err(Errors {
-                    types: ErrorsTypes::None,
-                    value: format!("Flag '{}' not in args", flag_name).to_string(),
-                })
-            }
-            _ => {
-                let mut res: Vec<String> = Vec::new();
-                for v in 1..=val {
-                    let f = &self.args[pos + v];
-                    if flags.contains(f) == true {
+                    if pos + i.value >= self.args.len() {
                         return Err(Errors {
                             types: ErrorsTypes::Few,
                             value: format!("Too few args: expected {}", flag_val).to_string(),
                         });
-                    } else {
-                        res.push(f.clone());
                     }
                 }
-                Ok(res)
             }
+
+            match pos {
+                0 => {
+                    return Err(Errors {
+                        types: ErrorsTypes::None,
+                        value: format!("Flag '{}' not in args", flag_name).to_string(),
+                    })
+                }
+                _ => {
+                    let mut res: Vec<String> = Vec::new();
+                    for v in 1..=val {
+                        let f = &self.args[pos + v];
+                        if flags.contains(f) == true {
+                            return Err(Errors {
+                                types: ErrorsTypes::Few,
+                                value: format!("Too few args: expected {}", flag_val).to_string(),
+                            });
+                        } else {
+                            res.push(f.clone());
+                        }
+                    }
+                    Ok(res)
+                }
+            }
+        } else {
+            Err(Errors {
+                types: ErrorsTypes::None,
+                value: "Flag not in args".to_string(),
+            })
         }
     }
     fn get_pos(&self, fl: &str) -> usize {
@@ -227,13 +229,36 @@ impl Core for Flags {
             }
         }
 
+        let mut val_val: Vec<String> = Vec::new();
+
         for i in 0..args.len() {
-            if i != 0 && flags.contains(&args[i - 1]) == false && fs::exists(&args[i]).unwrap() {
+            for f in &self.flags {
+                if f.name == args[i] && f.value != 0 {
+                    match self.parse(&f.name) {
+                        Ok(val) => {
+                            val_val = val;
+                        }
+                        Err(_) => {}
+                    }
+                }
+            }
+            if i != 0 && val_val.contains(&args[i]) == false && fs::exists(&args[i]).unwrap() {
                 let p = fs::canonicalize(&args[i]).unwrap();
                 paths.push(p.clone());
             }
         }
         paths
+    }
+    fn alias(&self) -> Vec<String> {
+        let mut flags: Vec<String> = Vec::new();
+        for i in &self.flags {
+            flags.push(i.name.clone());
+
+            for v in &i.alias {
+                flags.push(v.clone());
+            }
+        }
+        flags
     }
 }
 
@@ -247,7 +272,6 @@ impl Value for Option<&mut Flag> {
             None => None,
         }
     }
-
     fn clear(&mut self) -> Option<&mut Flag> {
         match self {
             Some(v) => {
@@ -268,7 +292,7 @@ impl Value for Option<&mut Flag> {
             }
             None => None,
         }
-    }
+    } //TODO: сделать проверку
     fn rem_alias(&mut self, val: &str) -> Option<&mut Flag> {
         match self {
             Some(v) => {
