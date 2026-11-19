@@ -51,6 +51,7 @@ pub trait Core {
     fn gen_help(&mut self);
     fn search_path(&self) -> PathGroup;
     fn search_subpath(&self, fl: &str) -> PathGroup;
+    fn search_subarg(&self, fl: &str) -> PathGroup;
     fn alias(&self) -> Vec<String>;
 }
 
@@ -278,6 +279,30 @@ impl Core for Flags {
                 if fs::exists(&self.args[i]).unwrap() && flags.contains(&self.args[i]) == false {
                     path.push(PathBuf::from(&self.args[i]));
                 } else if flags.contains(&self.args[i]) == true {
+                    break;
+                }
+            }
+        }
+
+        path
+    }
+    fn search_subarg(&self, fl: &str) -> PathGroup {
+        let mut pos: usize = 0;
+        let mut path: PathGroup = PathGroup::new();
+
+        let flags = self.alias();
+
+        for f in 0..self.args.len() {
+            if self.args[f] == fl {
+                pos = f;
+            }
+        }
+
+        if pos != 0 {
+            for i in pos + 1..self.args.len() {
+                if flags.contains(&self.args[i]) == false {
+                    path.push(PathBuf::from(&self.args[i]));
+                } else {
                     break;
                 }
             }
