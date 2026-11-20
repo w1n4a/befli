@@ -305,6 +305,12 @@ impl Core for Flags {
             }
         }
 
+        for f in &self.flags {
+            if fl == f.name {
+                pos += f.value;
+            }
+        }
+
         if pos != 0 {
             for i in pos + 1..self.args.len() {
                 if fs::exists(&self.args[i]).unwrap() && flags.contains(&self.args[i]) == false {
@@ -326,6 +332,12 @@ impl Core for Flags {
         for f in 0..self.args.len() {
             if self.args[f] == fl {
                 pos = f;
+            }
+        }
+
+        for f in &self.flags {
+            if fl == f.name {
+                pos += f.value;
             }
         }
 
