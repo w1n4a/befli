@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use color_print::{cformat, cprintln};
 use std::{env::args, fs, path::PathBuf};
 
 pub type PathGroup = Vec<PathBuf>;
@@ -22,6 +23,15 @@ pub struct Flags {
 pub enum ErrorsTypes {
     Null,
     Few,
+    None,
+}
+
+pub enum Colors {
+    Blue,
+    Red,
+    Meta,
+    Green,
+    Yellow,
     None,
 }
 
@@ -48,7 +58,7 @@ pub trait Core {
     fn get_pos(&self, fl: &str) -> usize;
     fn get_bio(&self, fl: &str) -> Option<&String>;
     fn parse(&self, fl: &str) -> Result<Vec<String>, Errors>;
-    fn gen_help(&mut self);
+    fn gen_help(&mut self, color: Colors);
     fn search_path(&self) -> PathGroup;
     fn search_subpath(&self, fl: &str) -> PathGroup;
     fn search_subarg(&self, fl: &str) -> PathGroup;
@@ -202,17 +212,38 @@ impl Core for Flags {
         }
         return None;
     }
-    fn gen_help(&mut self) {
+    fn gen_help(&mut self, color: Colors) {
         self.add("--help");
         self.get("--help").set_bio("Open help menu");
         if self.get_status("--help") {
             println!("Help:\n");
             for i in &self.flags {
                 if i.name != "--help" {
-                    println!("{} — {}", i.name, i.bio)
+                    cprintln!(
+                        "{} — {}",
+                        i.name,
+                        match color {
+                            Colors::Blue => cformat!("<b>{}</>", i.bio),
+                            Colors::Red => cformat!("<r>{}</>", i.bio),
+                            Colors::Meta => cformat!("<m>{}</>", i.bio),
+                            Colors::Green => cformat!("<g>{}</>", i.bio),
+                            Colors::Yellow => cformat!("<y>{}</>", i.bio),
+                            Colors::None => cformat!("{}", i.bio),
+                        }
+                    )
                 }
             }
-            println!("\nType --help to open this menu")
+            println!(
+                "\nType {} to open this menu",
+                match color {
+                    Colors::Blue => cformat!("<b>--help</>"),
+                    Colors::Red => cformat!("<r>--help</>"),
+                    Colors::Meta => cformat!("<m>--help</>"),
+                    Colors::Green => cformat!("<g>--help</>"),
+                    Colors::Yellow => cformat!("<y>--help</>"),
+                    Colors::None => cformat!("--help"),
+                }
+            )
         }
     }
     fn search_path(&self) -> PathGroup {

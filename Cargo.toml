@@ -1,6 +1,6 @@
 [package]
 name = "befli"
-version = "2.6.2"
+version = "2.7.0"
 edition = "2021"
 description = "A simple flags-system packages for Rust"
 license = "MIT"
@@ -8,3 +8,6 @@ repository = "https://github.com/w1n4a/befli"
 
 [lib]
 path = "src/core.rs"
+
+[dependencies]
+color-print = "0.3.7"
