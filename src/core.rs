@@ -221,15 +221,15 @@ impl Core for Flags {
                 if i.name != "--help" {
                     cprintln!(
                         "{} — {}",
-                        i.name,
                         match color {
-                            Colors::Blue => cformat!("<b>{}</>", i.bio),
-                            Colors::Red => cformat!("<r>{}</>", i.bio),
-                            Colors::Meta => cformat!("<m>{}</>", i.bio),
-                            Colors::Green => cformat!("<g>{}</>", i.bio),
-                            Colors::Yellow => cformat!("<y>{}</>", i.bio),
-                            Colors::None => cformat!("{}", i.bio),
-                        }
+                            Colors::Blue => cformat!("<b>{}</>", i.name),
+                            Colors::Red => cformat!("<r>{}</>", i.name),
+                            Colors::Meta => cformat!("<m>{}</>", i.name),
+                            Colors::Green => cformat!("<g>{}</>", i.name),
+                            Colors::Yellow => cformat!("<y>{}</>", i.name),
+                            Colors::None => cformat!("{}", i.name),
+                        },
+                        i.bio
                     )
                 }
             }
